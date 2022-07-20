@@ -1908,7 +1908,6 @@ static int synaptics_rmi4_free_fingers(struct synaptics_ts_data *ts)
 		input_mt_report_slot_state(ts->input_dev,
 				MT_TOOL_FINGER, 0);
 	}
-#endif 
 #endif
 	input_report_key(ts->input_dev, BTN_TOUCH, 0);
 	input_report_key(ts->input_dev, BTN_TOOL_FINGER, 0);
@@ -2136,6 +2135,7 @@ static ssize_t tp_gesture_write_func(struct file *file, const char __user *buffe
 	{
 		ts->gesture_enable = 0;
 	}
+#endif
     //ruanbanmao@BSP add for tp gesture 2015-05-06, end
 	return count;
 }
@@ -2229,7 +2229,7 @@ static const struct file_operations coordinate_proc_fops = {
 	.open = simple_open,
 	.owner = THIS_MODULE,
 };
-#endif
+
 static int page ,address,block;
 static ssize_t synap_read_address(struct file *file, char __user *user_buf, size_t count, loff_t *ppos)
 {
