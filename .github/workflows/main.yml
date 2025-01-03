@@ -1,4 +1,4 @@
-name: Build OnePlus 6 and 6t KernelSU Kernel
+name: Build Kernel
 on:
   workflow_dispatch:
   schedule:
@@ -26,22 +26,29 @@ jobs:
       uses: actions/checkout@v3
       with:
         submodules: 'true'
-        fetch-depth: 100
+        fetch-depth: 1
 
     - name: Set up ccache
       uses: hendrikmuhs/ccache-action@v1.2
 
     - name: Install dependencies
       run: |
+        sudo systemctl disable snapd.service
+        sudo systemctl disable snapd.socket
+        sudo systemctl disable snapd.seeded.service
+        sudo apt remove snapd
         sudo apt-get update -y 
+        sudo apt-get upgrade -y 
         sudo apt install gcc-aarch64-linux-gnu -y
         sudo apt install gcc-arm-linux-gnueabi -y
-        sudo apt install binutils make python3 libssl-dev build-essential bc  bison flex unzip libssl-dev ca-certificates xz-utils mkbootimg cpio device-tree-compiler git git-lfs -y
-        git clone https://github.com/kdrag0n/proton-clang --dept=1 -b master
+        sudo apt install binutils make python3 libssl-dev build-essential bc bison flex unzip libssl-dev ca-certificates xz-utils mkbootimg cpio device-tree-compiler git git-lfs -y
+        aria2c -j$(nproc --all) $(curl -fsSL https://github.com/ZyCromerZ/Clang/raw/main/Clang-main-link.txt)
+        mkdir zyc-clang
+        tar -xzvf Clang-*.tar.gz -C zyc-clang >> /dev/null
         git clone https://github.com/osm0sis/AnyKernel3
         sed -i 's/do.devicecheck=1/do.devicecheck=0/g' AnyKernel3/anykernel.sh
-        sed -i 's!block=/dev/block/platform/omap/omap_hsmmc.0/by-name/boot;!block=auto;!g' AnyKernel3/anykernel.sh
-        sed -i 's/is_slot_device=0;/is_slot_device=auto;/g' AnyKernel3/anykernel.sh
+        sed -i 's!BLOCK=/dev/block/platform/omap/omap_hsmmc.0/by-name/boot;!BLOCK=auto;!g' AnyKernel3/anykernel.sh
+        sed -i 's/IS_SLOT_DEVICE=0;/is_slot_device=auto;/g' AnyKernel3/anykernel.sh
         rm -rf AnyKernel3/.git* AnyKernel3/README.md
     
     - name: GetTime
@@ -51,8 +58,8 @@ jobs:
 
     - name: Build Kernel-With-KernelSU
       run: |
-        curl -LSs "https://raw.githubusercontent.com/rsuntk/KernelSU/main/kernel/setup.sh" | bash -s main
-        export PATH=$(pwd)/proton-clang/bin/:$PATH
+        curl -LSs "https://raw.githubusercontent.com/rifsxd/KernelSU-Next/next/kernel/setup.sh" | bash -
+        export PATH=$(pwd)/zyc-clang/bin/:$PATH
         make $KERNEL_CMDLINE $KERNEL_DEFCONFIG CC="ccache clang"
         make $KERNEL_CMDLINE CC="ccache clang" -j$(nproc --all)
         cp out/arch/arm64/boot/Image.gz-dtb AnyKernel3
